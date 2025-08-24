@@ -234,8 +234,9 @@
     </div>
 
     <script>
-        // Global progress data
+        // Global progress data with localStorage support
         const progressData = {};
+        const STORAGE_KEY = 'system-design-fe-progress';
 
         // Timeline data
         const timelineData = [
@@ -417,6 +418,35 @@
             teal: { bg: 'bg-teal-500', text: 'text-teal-600', border: 'border-teal-500' }
         };
 
+        // Load progress from localStorage
+        function loadProgress() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsedData = JSON.parse(saved);
+                    // Merge saved data with progressData
+                    Object.keys(parsedData).forEach(sectionId => {
+                        if (progressData[sectionId]) {
+                            Object.keys(parsedData[sectionId]).forEach(itemIndex => {
+                                progressData[sectionId][itemIndex] = parsedData[sectionId][itemIndex];
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                console.warn('Failed to load progress from localStorage:', error);
+            }
+        }
+
+        // Save progress to localStorage
+        function saveProgress() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(progressData));
+            } catch (error) {
+                console.warn('Failed to save progress to localStorage:', error);
+            }
+        }
+
         // Initialize progress data
         function initializeProgress() {
             timelineData.forEach(section => {
@@ -425,6 +455,8 @@
                     progressData[section.id][index] = false;
                 });
             });
+            // Load saved progress after initialization
+            loadProgress();
         }
 
         // Calculate section progress
@@ -482,6 +514,7 @@
         function handleCheckboxChange(sectionId, itemIndex, checked) {
             if (progressData[sectionId]) {
                 progressData[sectionId][itemIndex] = checked;
+                saveProgress(); // Save to localStorage whenever progress changes
                 updateProgress();
             }
         }
@@ -555,6 +588,13 @@
         // Reset all progress
         function resetProgress() {
             if (confirm('Are you sure you want to reset all progress? This action cannot be undone.')) {
+                // Clear localStorage
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                } catch (error) {
+                    console.warn('Failed to clear localStorage:', error);
+                }
+
                 // Reset in-memory data
                 initializeProgress();
 
